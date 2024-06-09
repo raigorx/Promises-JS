@@ -8,8 +8,10 @@ body {
 }
 
 .button-container {
+  margin: 0 20px 0 20px;
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
   gap: 20px;
 }
 
