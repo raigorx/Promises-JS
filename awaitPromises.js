@@ -2,7 +2,7 @@ let abortController = new AbortController()
 
 const sleep = (ms, context) =>
   new Promise((resolve, reject) => {
-    const timeout = setTimeout(resolve, ms)
+    const timeout = setTimeout(() => resolve('fulfilled'), ms)
     abortController.signal.addEventListener('abort', () => {
       console.log(`Aborted triggered ${context}`)
       clearTimeout(timeout) // Clear the timeout to avoid memory leaks
@@ -181,6 +181,55 @@ const five = async () => {
   cancelPromise(id, 2000, timeout.id, interval.id)
 }
 
+const six = async () => {
+  const id = 6
+  console.log(`start ${id}`)
+  let resolvedValueFromThen = 'nothing'
+  // sleep(1000, id) returns a Promise, so that's what we get here
+  let sleepPromise = sleep(1000, id).then(
+    resolvedValue => (resolvedValueFromThen = resolvedValue)
+  )
+  // Log the promise and set resolvedValueFromThen when it resolves
+  // sleepPromise.then(resolvedValue => (resolvedValueFromThen = resolvedValue))
+  console.log(sleepPromise)
+  // The await operator stops the execution until the promise is settled
+  // Since this promise gets fulfilled, we get the resolved value
+  // If resolve was called without a parameter, it would be undefined
+  const resolvedValue = await sleep(1000, id)
+  console.log(resolvedValue)
+  // After the promise is fulfilled, we can get its resolved value using then
+  // This is the same as await sleep(1000, id)
+  console.log(resolvedValueFromThen)
+  resolvedValueFromThen = 'nothing'
+  sleepPromise = sleep(1000, id)
+  await sleep(1000, id)
+  // If we assign a .then() callback after the promise is fulfilled,
+  // this won't execute immediately
+  sleepPromise.then(resolvedValue => (resolvedValueFromThen = resolvedValue))
+  console.log(resolvedValueFromThen)
+}
+
+const seven = async () => {
+  const id = 7
+  abortController = new AbortController()
+  console.log(`start ${id}`)
+  try {
+    // try/catch doesnt work with promises you have to use await
+    if (sleep(1000, id) instanceof Promise) console.log('is a promise')
+    abortController.abort()
+    abortController = new AbortController()
+    // trigger abort after sleep is being called
+    setTimeout(() => abortController.abort(), 500)
+    await sleep(1000, id)
+  } catch (error) {
+    console.log(error)
+  }
+  abortController = new AbortController()
+  setTimeout(() => abortController.abort(), 500)
+  // no need of try/catch if you use .catch() callback
+  sleep(1000, id).catch(error => console.log(`no try/catch ${error}`))
+}
+
 // ;(async () => {
 //   await zero()
 //   await one()
@@ -188,6 +237,8 @@ const five = async () => {
 //   await three()
 //   await four()
 //   await five()
+//   await six()
+//   await seven()
 // })()
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -197,4 +248,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btnThree').addEventListener('pointerdown', three)
   document.getElementById('btnFour').addEventListener('pointerdown', four)
   document.getElementById('btnFive').addEventListener('pointerdown', five)
+  document.getElementById('btnSix').addEventListener('pointerdown', six)
+  document.getElementById('btnSeven').addEventListener('pointerdown', seven)
 })
